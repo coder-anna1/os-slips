@@ -1,0 +1,197 @@
+Q.1 Write a program to find the execution time taken for execution of a given set of instructions 
+(use clock() 
+function) 
+
+
+ans
+#include<stdio.h>
+#include<time.h>
+
+int main(){
+clock_t start, end;
+double cpu_time_used;
+start = clock();
+int sum = 0;
+int i;
+for(i = 0; i < 10000; i++){
+sum += i;
+}
+end = clock();
+cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+printf("Sum=%d \n", sum);
+printf("Execution time=%f seconds \n", cpu_time_used);
+return 0;
+}
+
+
+
+ 
+Q.2 Write the simulation program to implement demand paging and show the page scheduling 
+and total number of page faults for the following given page reference string. Give input n =3 as 
+the number of memory frames. 
+Reference String : 12,15,12,18,6,8,11,12,19,12,6,8,12,15,19,8 
+Implement OPT 
+
+
+ans
+#include <stdio.h>
+#define MAX 100
+
+int predict(int refStr[], int frames[], int refLen, int index, int n) {
+int i, j, farthest = index, pos = -1, found;
+for(i = 0; i < n; i++) {
+found = 0;
+for(j = index; j < refLen; j++) {
+if(frames[i] == refStr[j]) {
+if(j > farthest) {
+farthest = j;
+pos = i;
+}
+found = 1;
+break;
+}
+}
+if(!found)
+return i;
+}
+return (pos == -1) ? 0 : pos;
+}
+
+int main() {
+int referenceString[MAX], frames[MAX];
+int n = 3, refLen = 16;
+int i, j, k, pageFaults = 0, found;
+
+int inputRefStr[16] = {12,15,12,18,6,8,11,12,19,12,6,8,12,15,19,8};
+for(i = 0; i < refLen; i++)
+referenceString[i] = inputRefStr[i];
+
+for(i = 0; i < n; i++)
+frames[i] = -1;
+
+printf("Page Replacement Process (OPT):\n");
+
+for(i = 0; i < refLen; i++) {
+found = 0;
+for(j = 0; j < n; j++) {
+if(frames[j] == referenceString[i]) {
+found = 1;
+break;
+}
+}
+
+if(!found) {
+int pos = -1;
+for(j = 0; j < n; j++) {
+if(frames[j] == -1) {
+pos = j;
+break;
+}
+}
+if(pos == -1)
+pos = predict(referenceString, frames, refLen, i+1, n);
+frames[pos] = referenceString[i];
+pageFaults++;
+}
+
+printf("Step %2d: ", i+1);
+for(k = 0; k < n; k++) {
+if(frames[k] != -1)
+printf("%d ", frames[k]);
+else
+printf("- ");
+}
+if(found)
+printf(" <- No Page Fault\n");
+else
+printf(" <- Page Fault\n");
+}
+
+printf("\nTotal Page Faults = %d\n", pageFaults);
+return 0;
+}
+
+
+
+   or
+
+
+Given an initial state of a 8-puzzle problem and final state to be reached 
+ 
+Find the most cost-effective path to reach the final state from initial state using A* Algorithm 
+in C/Python. 
+Consider g(n) = Depth of node and h(n) = Number of misplaced tiles. 
+
+
+ans
+import heapq
+
+class Node:
+    def __init__(self, state, parent=None, g=0):
+        self.state = state
+        self.parent = parent
+        self.g = g
+        self.h = self.calculate_h()
+        self.f = self.g + self.h
+
+    def calculate_h(self):
+        goal_state = [[1,2,3],[8,0,4],[7,6,5]]
+        return sum(1 for i in range(3) for j in range(3) if self.state[i][j] != 0 and self.state[i][j] != goal_state[i][j])
+
+    def __lt__(self, other):
+        return self.f < other.f
+
+def get_empty_position(state):
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == 0:
+                return i,j
+
+def generate_neighbors(node):
+    neighbors = []
+    directions = [(-1,0),(1,0),(0,-1),(0,1)]
+    empty_i, empty_j = get_empty_position(node.state)
+    for di,dj in directions:
+        ni, nj = empty_i + di, empty_j + dj
+        if 0 <= ni < 3 and 0 <= nj < 3:
+            new_state = [list(row) for row in node.state]
+            new_state[empty_i][empty_j], new_state[ni][nj] = new_state[ni][nj], new_state[empty_i][empty_j]
+            neighbors.append(Node(new_state, node, node.g + 1))
+    return neighbors
+
+def a_star(initial_state):
+    start_node = Node(initial_state)
+    open_set = []
+    heapq.heappush(open_set, start_node)
+    g_scores = {tuple(map(tuple, initial_state)): 0}
+
+    while open_set:
+        current = heapq.heappop(open_set)
+        if current.h == 0:
+            return reconstruct_path(current)
+        for neighbor in generate_neighbors(current):
+            state_tuple = tuple(map(tuple, neighbor.state))
+            tentative_g = current.g + 1
+            if state_tuple not in g_scores or tentative_g < g_scores[state_tuple]:
+                g_scores[state_tuple] = tentative_g
+                heapq.heappush(open_set, neighbor)
+    return None
+
+def reconstruct_path(node):
+    path = []
+    while node:
+        path.append(node.state)
+        node = node.parent
+    return path[::-1]
+
+if __name__ == "__main__":
+    initial_state = [[2,8,3],[1,6,4],[7,0,5]]
+    solution = a_star(initial_state)
+    if solution:
+        print("Solution path:")
+        for step in solution:
+            for row in step:
+                print(row)
+            print()
+    else:
+        print("No solution found.")

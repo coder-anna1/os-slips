@@ -1,0 +1,290 @@
+Q.1 Write a program that demonstrates the use of nice() system call. After a child process is 
+started using fork(), assign higher priority to the child using nice() system call. 
+
+
+ans
+#include<stdio.h>
+#include<unistd.h>
+#include<sys/types.h>
+#include<stdlib.h>
+#include<sys/time.h>
+#include<sys/resource.h>
+#include<errno.h>
+
+int main() {
+    int pid, retnice;
+    printf("Press Ctrl+Z to stop the process\n");
+    pid = fork();
+
+    if(pid < 0) {
+        perror("Fork failed");
+        exit(1);
+    }
+
+    if(pid == 0) {
+        errno = 0;
+        retnice = nice(-5);
+        if(retnice == -1 && errno != 0)
+            perror("nice");
+        while(1) {
+            printf("Child gets higher CPU Priority %d\n", retnice);
+            sleep(1);
+        }
+    } else {
+        errno = 0;
+        retnice = nice(4);
+        if(retnice == -1 && errno != 0)
+            perror("nice");
+        while(1) {
+            printf("Parent gets lower CPU Priority %d\n", retnice);
+            sleep(1);
+        }
+    }
+    return 0;
+}
+
+
+
+Q.2 Write a C program to simulate Banker’s algorithm for the purpose of deadlock 
+avoidance. Consider the following snapshot of system, A, B, C and D are the resource type. 
+ALLOCATION MAX 
+ A B C D A B C D 
+P0 0 0 1 2 0 0 1 2 
+P1 1 0 0 0 1 7 5 0 
+P2 1 3 5 4 2 3 5 6 
+P3 0 6 3 2 0 6 5 2 
+P4 0 0 1 4 0 6 5 6 
+ 
+AVAILABLE 
+A B C D 
+1 5 2 0
+
+a) Calculate and display the content of need matrix? 
+b) Is the system in safe state? If display the safe sequence. 
+c) If a request from process P arrives for (0, 4, 2, 0) can it be granted immediately by keeping 
+the system in safe state. Print a message. 
+
+
+ans
+
+
+#include <stdio.h>
+#include <stdbool.h>
+
+int main() {
+    int n = 5, m = 4;
+    int alloc[5][4] = {
+        {0, 0, 1, 2},
+        {1, 0, 0, 0},
+        {1, 3, 5, 4},
+        {0, 6, 3, 2},
+        {0, 0, 1, 4}
+    };
+
+    int max[5][4] = {
+        {0, 0, 1, 2},
+        {1, 7, 5, 0},
+        {2, 3, 5, 6},
+        {0, 6, 5, 2},
+        {0, 6, 5, 6}
+    };
+
+    int avail[4] = {1, 5, 2, 0};
+    int need[5][4];
+    int finish[5] = {0};
+    int safeSeq[5];
+    int count = 0;
+
+    // Calculate Need matrix
+    printf("Need Matrix:\n");
+    for(int i = 0; i < n; i++) {
+        for(int j = 0; j < m; j++) {
+            need[i][j] = max[i][j] - alloc[i][j];
+            printf("%d ", need[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Safety algorithm
+    int work[4];
+    for(int i = 0; i < m; i++) work[i] = avail[i];
+
+    while(count < n) {
+        bool found = false;
+        for(int p = 0; p < n; p++) {
+            if(finish[p] == 0) {
+                int j;
+                for(j = 0; j < m; j++)
+                    if(need[p][j] > work[j])
+                        break;
+                if(j == m) {
+                    for(int k = 0; k < m; k++)
+                        work[k] += alloc[p][k];
+                    safeSeq[count++] = p;
+                    finish[p] = 1;
+                    found = true;
+                }
+            }
+        }
+        if(!found) break;
+    }
+
+    if(count < n) {
+        printf("\nThe system is NOT in a safe state.\n");
+    } else {
+        printf("\nThe system is in a SAFE state.\nSafe sequence: ");
+        for(int i = 0; i < n; i++)
+            printf("P%d ", safeSeq[i]);
+        printf("\n");
+    }
+
+    // Check request from P1 -> (0,4,2,0)
+    int reqP = 1;
+    int request[4] = {0, 4, 2, 0};
+    bool canGrant = true;
+
+    for(int i = 0; i < m; i++) {
+        if(request[i] > need[reqP][i]) {
+            canGrant = false;
+            break;
+        }
+        if(request[i] > avail[i]) {
+            canGrant = false;
+            break;
+        }
+    }
+
+    if(canGrant) {
+        printf("\nRequest (0,4,2,0) from P1 can be granted immediately.\n");
+    } else {
+        printf("\nRequest (0,4,2,0) from P1 CANNOT be granted immediately.\n");
+    }
+
+    return 0;
+}
+
+
+
+         or
+
+
+Write the simulation program using SJF(non-preemptive). The arrival time and first CPU bursts of 
+different jobs should be input to the system. The Assume the fixed I/O waiting time (2 units).The next 
+CPU burst should be generated using random function. The output should give the Gantt chart, 
+Turnaround Time and Waiting time for each process and average times. 
+
+
+ans
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+typedef struct SJF {
+    char name[20];
+    int at, bt, ct, tbt, wt, tat;
+} SJF;
+
+SJF *s;
+int n, currenttime = 0, cnt = 0;
+float totalwt = 0, totaltat = 0, avgwt = 0, avgtat = 0;
+const int IOWAIT = 2;
+
+void accept() {
+    int i;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    s = (SJF*)malloc(sizeof(SJF) * n);
+    for(i = 0; i < n; i++) {
+        printf("Enter process name: ");
+        scanf("%s", s[i].name);
+        printf("Enter arrival time: ");
+        scanf("%d", &s[i].at);
+        printf("Enter burst time: ");
+        scanf("%d", &s[i].bt);
+        s[i].tbt = s[i].bt;
+    }
+}
+
+void sortByArrival() {
+    SJF temp;
+    for(int i = 0; i < n-1; i++) {
+        for(int j = i+1; j < n; j++) {
+            if(s[i].at > s[j].at) {
+                temp = s[i];
+                s[i] = s[j];
+                s[j] = temp;
+            }
+        }
+    }
+}
+
+int getIndex() {
+    int i, loc = -1, min = 9999;
+    for(i = 0; i < n; i++) {
+        if(s[i].tbt != 0 && s[i].at <= currenttime) {
+            if(s[i].bt < min) {
+                min = s[i].bt;
+                loc = i;
+            }
+        }
+    }
+    return loc;
+}
+
+void schedule() {
+    sortByArrival();
+    srand(time(NULL)); // for random next burst generation
+
+    printf("\n*********************** GANTT CHART *************************\n");
+
+    currenttime = s[0].at;
+    while(cnt < n) {
+        int i = getIndex();
+        if(i == -1) {
+            printf("|%d IDLE ", currenttime);
+            currenttime++;
+        } else {
+            printf("|%d %s ", currenttime, s[i].name);
+            s[i].wt = currenttime - s[i].at;
+            s[i].tat = s[i].wt + s[i].bt;
+            currenttime += s[i].bt;
+            s[i].ct = currenttime;
+            printf("%d", currenttime);
+
+            totalwt += s[i].wt;
+            totaltat += s[i].tat;
+
+            // simulate I/O wait and next CPU burst
+            int nextBurst = (rand() % 5) + 1; // 1–5 units
+            currenttime += IOWAIT;
+            printf(" [IO wait %d] ", IOWAIT);
+            printf("[Next burst generated: %d]\n", nextBurst);
+
+            s[i].tbt = 0;
+            cnt++;
+        }
+    }
+
+    avgwt = totalwt / n;
+    avgtat = totaltat / n;
+}
+
+void display() {
+    printf("\n*****************************************************************\n");
+    printf("Name\tAT\tBT\tWT\tTAT\tCT\n");
+    for(int i = 0; i < n; i++) {
+        printf("%s\t%d\t%d\t%d\t%d\t%d\n", s[i].name, s[i].at, s[i].bt, s[i].wt, s[i].tat, s[i].ct);
+    }
+    printf("\nTotal Waiting Time: %.2f", totalwt);
+    printf("\nTotal Turnaround Time: %.2f", totaltat);
+    printf("\nAverage Waiting Time: %.2f", avgwt);
+    printf("\nAverage Turnaround Time: %.2f\n", avgtat);
+}
+
+int main() {
+    accept();
+    schedule();
+    display();
+    return 0;
+}

@@ -1,0 +1,252 @@
+Q.1 Write a program to create a child process using fork().The parent should goto sleep state and 
+child process should begin its execution. In the child process, use execl() to execute the “ls” 
+command. 
+
+
+ans
+#include<stdio.h>
+#include<unistd.h>
+#include<stdlib.h>
+
+int main(){
+printf("Before creating child process\n");
+pid_t pid = fork();
+if(pid < 0){
+    printf("Fork failed\n");
+    return 1;
+}
+if(pid == 0){
+    execl("/bin/ls","ls","-l",NULL);
+    printf("Exec failed\n");
+    return 1;
+} else {
+    printf("Parent process sleeping for 5 seconds\n");
+    sleep(5);
+    printf("Parent process awake\n");
+}
+return 0;
+}
+
+
+
+Q.2 Write the program to simulate Non-preemptive Priority scheduling. The arrival time and 
+first CPU burst and priority for different n number of processes should be input to the algorithm. 
+Assume the fixed IO waiting time (2 units). The next CPU-burst should be generated randomly. 
+The output should give Gantt chart, turnaround time and waiting time for each process. Also find 
+the average waiting time and turnaround time. 
+
+
+ans
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#define MAX 20
+#define IO_WAIT 2
+
+typedef struct {
+int pid;
+int arrival;
+int burst1;
+int burst2;
+int priority;
+int completion;
+int turnaround;
+int waiting;
+int done;
+} Process;
+
+int main() {
+Process p[MAX];
+int n, completed = 0, current_time = 0;
+float avgTAT = 0, avgWT = 0;
+srand(time(NULL));
+printf("Enter number of processes: ");
+scanf("%d", &n);
+for(int i=0; i<n; i++) {
+p[i].pid = i+1;
+printf("\nEnter arrival time of P%d: ", p[i].pid);
+scanf("%d", &p[i].arrival);
+printf("Enter first CPU burst of P%d: ", p[i].pid);
+scanf("%d", &p[i].burst1);
+printf("Enter priority of P%d (smaller number = higher priority): ", p[i].pid);
+scanf("%d", &p[i].priority);
+p[i].burst2 = (rand() % 10) + 1;
+p[i].done = 0;
+}
+
+printf("\nGantt Chart:\n");
+while(completed < n) {
+int idx = -1;
+int best_priority = 99999;
+for(int i=0; i<n; i++) {
+if(!p[i].done && p[i].arrival <= current_time) {
+if(p[i].priority < best_priority) {
+best_priority = p[i].priority;
+idx = i;
+} else if(p[i].priority == best_priority) {
+if(p[i].arrival < p[idx].arrival) {
+idx = i;
+}
+}
+}
+}
+
+if(idx == -1) {
+current_time++;
+continue;
+}
+
+printf("| P%d ", p[idx].pid);
+if(current_time < p[idx].arrival)
+current_time = p[idx].arrival;
+
+current_time += p[idx].burst1;
+current_time += IO_WAIT;
+current_time += p[idx].burst2;
+
+p[idx].completion = current_time;
+p[idx].turnaround = p[idx].completion - p[idx].arrival;
+p[idx].waiting = p[idx].turnaround - (p[idx].burst1 + p[idx].burst2);
+avgTAT += p[idx].turnaround;
+avgWT += p[idx].waiting;
+p[idx].done = 1;
+completed++;
+}
+printf("|\n");
+
+printf("\nProcess\tAT\tBT1\tBT2\tPri\tCT\tTAT\tWT");
+for(int i=0; i<n; i++) {
+printf("\nP%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
+p[i].pid, p[i].arrival, p[i].burst1, p[i].burst2, p[i].priority,
+p[i].completion, p[i].turnaround, p[i].waiting);
+}
+
+printf("\n\nAverage Turnaround Time = %.2f", avgTAT/n);
+printf("\nAverage Waiting Time = %.2f\n", avgWT/n);
+
+return 0;
+}
+
+
+
+     or
+
+
+Write a C program to simulate Banker’s algorithm for the purpose of deadlock 
+avoidance. Consider the following snapshot of system, A, B, C and D are the resource type. 
+ALLOCATION MAX 
+ A B C D A B C D 
+P0 0 0 1 2 0 0 1 2 
+P1 1 0 0 0 1 7 5 0 
+P2 1 3 5 4 2 3 5 6 
+P3 0 6 3 2 0 6 5 2 
+P4 0 0 1 4 0 6 5 6 
+ 
+AVAILABLE 
+A B C D 
+1 5 2 0
+
+a) Calculate and display the content of need matrix? 
+b) Is the system in safe state? If display the safe sequence. 
+c) If a request from process P arrives for (0, 4, 2, 0) can it be granted immediately by keeping the 
+system in safe state. Print a message 
+
+
+ans
+#include <stdio.h>
+#include <stdbool.h>
+
+#define P 5
+#define R 4
+
+void calculateNeed(int need[P][R], int max[P][R], int alloc[P][R]) {
+    for(int i=0;i<P;i++)
+        for(int j=0;j<R;j++)
+            need[i][j] = max[i][j] - alloc[i][j];
+}
+
+bool isSafe(int alloc[P][R], int max[P][R], int avail[R], int safeSeq[P]) {
+    int need[P][R];
+    calculateNeed(need,max,alloc);
+    bool finish[P] = {false};
+    int work[R];
+    for(int i=0;i<R;i++) work[i]=avail[i];
+    int count=0;
+    while(count<P){
+        bool found=false;
+        for(int p=0;p<P;p++){
+            if(!finish[p]){
+                int j;
+                for(j=0;j<R;j++){
+                    if(need[p][j]>work[j]) break;
+                }
+                if(j==R){
+                    for(int k=0;k<R;k++) work[k]+=alloc[p][k];
+                    safeSeq[count++] = p;
+                    finish[p]=true;
+                    found=true;
+                }
+            }
+        }
+        if(!found) return false;
+    }
+    return true;
+}
+
+bool requestGrant(int proc, int req[R], int alloc[P][R], int max[P][R], int avail[R]) {
+    for(int i=0;i<R;i++){
+        if(req[i] > max[proc][i] - alloc[proc][i]) return false;
+        if(req[i] > avail[i]) return false;
+    }
+    for(int i=0;i<R;i++){
+        avail[i]-=req[i];
+        alloc[proc][i]+=req[i];
+    }
+    int safeSeq[P];
+    if(isSafe(alloc,max,avail,safeSeq)){
+        printf("Request can be granted safely. New safe sequence: ");
+        for(int i=0;i<P;i++) printf("P%d ", safeSeq[i]);
+        printf("\n");
+        return true;
+    } else {
+        for(int i=0;i<R;i++){
+            avail[i]+=req[i];
+            alloc[proc][i]-=req[i];
+        }
+        return false;
+    }
+}
+
+int main() {
+    int alloc[P][R] = {{0,0,1,2},{1,0,0,0},{1,3,5,4},{0,6,3,2},{0,0,1,4}};
+    int max[P][R] = {{0,0,1,2},{1,7,5,0},{2,3,5,6},{0,6,5,2},{0,6,5,6}};
+    int avail[R] = {1,5,2,0};
+    int need[P][R];
+    int safeSeq[P];
+
+    calculateNeed(need,max,alloc);
+    printf("Need Matrix:\n");
+    for(int i=0;i<P;i++){
+        for(int j=0;j<R;j++)
+            printf("%d ", need[i][j]);
+        printf("\n");
+    }
+
+    if(isSafe(alloc,max,avail,safeSeq)){
+        printf("\nSystem is in safe state.\nSafe sequence: ");
+        for(int i=0;i<P;i++) printf("P%d ", safeSeq[i]);
+        printf("\n");
+    } else {
+        printf("\nSystem is NOT in safe state.\n");
+    }
+
+    int req[R] = {0,4,2,0};
+    printf("\nRequest by P1: ");
+    for(int i=0;i<R;i++) printf("%d ", req[i]);
+    printf("\n");
+    if(!requestGrant(1, req, alloc, max, avail)){
+        printf("Request cannot be granted without risking unsafe state.\n");
+    }
+
+    return 0;
+}

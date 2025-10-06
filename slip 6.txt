@@ -1,0 +1,176 @@
+Q.1 Write a program to find the execution time taken for execution of a given set of instructions 
+(use clock() function) 
+
+#include<stdio.h>
+#include<time.h>
+
+int main(){
+    clock_t start,end;
+    double cpu_time_used;
+
+    start=clock();
+
+    int sum=0;
+    int i;
+    for(i=0;i<10000;i++){
+        sum+=i;
+    }
+    end=clock();
+
+    cpu_time_used=((double)(end-start))/CLOCKS_PER_SEC;
+    printf("Sum=%d \n",sum);
+    printf("Execution time=%f seconds \n",cpu_time_used);
+
+    return 0;
+}
+
+Q.2 Write the simulation program to implement demand paging and show the page scheduling 
+and total number of page faults for the following given page reference string. Give input n as the 
+number of memory frames. 
+Reference String :3, 4, 5, 6, 3, 4, 7, 3, 4, 5, 6, 7, 2, 4, 6 
+Implement FIFO 
+
+#include <stdio.h>
+#define MAX 100
+
+int main() {
+    int referenceString[] = {3,4,5,6,3,4,7,3,4,5,6,7,2,4,6};
+    int refLen = 15;
+    int frames[MAX], n;
+    int i, j, k, pageFaults = 0, found, pos = 0;
+
+    printf("Enter number of memory frames: ");
+    scanf("%d", &n);
+
+    for(i = 0; i < n; i++) {
+        frames[i] = -1;
+    }
+
+    printf("\nPage Replacement Process (FIFO):\n");
+    for(i = 0; i < refLen; i++) {
+        found = 0;
+        for(j = 0; j < n; j++) {
+            if(frames[j] == referenceString[i]) {
+                found = 1;
+                break;
+            }
+        }
+        if(!found) {
+            frames[pos] = referenceString[i];
+            pos = (pos + 1) % n;
+            pageFaults++;
+            printf("Step %2d: ", i + 1);
+            for(k = 0; k < n; k++) {
+                if(frames[k] != -1)
+                    printf("%d ", frames[k]);
+                else
+                    printf("- ");
+            }
+            printf(" <- Page Fault\n");
+        } else {
+            printf("Step %2d: ", i + 1);
+            for(k = 0; k < n; k++) {
+                if(frames[k] != -1)
+                    printf("%d ", frames[k]);
+                else
+                    printf("- ");
+            }
+            printf(" <- No Page Fault\n");
+        }
+    }
+
+    printf("\nTotal Page Faults = %d\n", pageFaults);
+    return 0;
+}
+
+
+The numbers written on edges represent the distance between the nodes. 
+The numbers written on nodes represent the heuristic value. 
+Implement A* algorithm in C/Python for above graph and find out most cost-effective path from 
+A to J. 
+
+import heapq
+
+class Node:
+    def __init__(self, name, heuristic):
+        self.name = name
+        self.heuristic = heuristic
+        self.edges = {}  
+        self.g = float('inf')  
+        self.f = float('inf')  
+
+    def add_edge(self, neighbor, cost):
+        self.edges[neighbor] = cost
+
+    def __lt__(self, other):
+        return self.f < other.f
+
+
+def a_star(start_node, goal_node):
+    open_set = []
+    start_node.g = 0
+    start_node.f = start_node.heuristic
+    heapq.heappush(open_set, start_node)
+    came_from = {}
+
+    while open_set:
+        current_node = heapq.heappop(open_set)
+
+        if current_node.name == goal_node.name:
+            return reconstruct_path(came_from, current_node)
+
+        for neighbor, cost in current_node.edges.items():
+            tentative_g = current_node.g + cost
+            if tentative_g < neighbor.g:
+                came_from[neighbor] = current_node
+                neighbor.g = tentative_g
+                neighbor.f = neighbor.g + neighbor.heuristic
+                heapq.heappush(open_set, neighbor)
+
+    return None  
+
+
+def reconstruct_path(came_from, current_node):
+    total_path = [current_node.name]
+    while current_node in came_from:
+        current_node = came_from[current_node]
+        total_path.append(current_node.name)
+    return total_path[::-1]
+
+
+nodes = {
+    'A': Node('A', 10),
+    'B': Node('B', 8),
+    'C': Node('C', 5),
+    'D': Node('D', 7),
+    'E': Node('E', 3),
+    'F': Node('F', 6),
+    'G': Node('G', 5),
+    'H': Node('H', 3),
+    'I': Node('I', 1),
+    'J': Node('J', 1)
+}
+
+nodes['A'].add_edge(nodes['B'], 6)
+nodes['A'].add_edge(nodes['F'], 3)
+nodes['B'].add_edge(nodes['D'], 2)
+nodes['B'].add_edge(nodes['C'], 3)
+nodes['C'].add_edge(nodes['D'], 1)
+nodes['C'].add_edge(nodes['E'], 5)
+nodes['D'].add_edge(nodes['E'], 8)
+nodes['E'].add_edge(nodes['I'], 5)
+nodes['E'].add_edge(nodes['J'], 5)
+nodes['J'].add_edge(nodes['I'], 3)
+nodes['I'].add_edge(nodes['G'], 3)
+nodes['I'].add_edge(nodes['H'], 2)
+nodes['F'].add_edge(nodes['H'], 7)
+nodes['G'].add_edge(nodes['F'], 1)
+
+start_node = nodes['A']
+goal_node = nodes['J']
+path = a_star(start_node, goal_node)
+
+if path:
+    print("Path from A to J:", " -> ".join(path))
+else:
+    print("No path found.")

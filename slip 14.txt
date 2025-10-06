@@ -1,0 +1,233 @@
+Q.1 Write a program to find the execution time taken for execution of a given set of instructions 
+(use clock() function)
+
+
+ans
+#include <stdio.h>
+#include <time.h>
+
+int main() {
+    clock_t start, end;
+    double cpu_time_used;
+    int sum = 0;
+
+    start = clock();
+    for (int i = 0; i < 10000; i++) {
+        sum += i;
+    }
+    end = clock();
+
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    printf("Sum = %d\n", sum);
+    printf("Execution time = %f seconds\n", cpu_time_used);
+
+    return 0;
+}
+
+
+
+ 
+Q.2 Write the simulation program to implement demand paging and show the page scheduling 
+and total number of page faults for the following given page reference string. Give input n =3 as 
+the number of memory frames. 
+Reference String : 0, 2, 1, 6, 4, 0, 1, 0, 3, 1, 2, 1 
+Implement FIFO
+
+
+ans
+#include <stdio.h>
+#define MAX 100
+
+int main() {
+    int referenceString[MAX], frames[MAX], n, refLen;
+    int i, j, k, pageFaults = 0, found, pos = 0;
+
+    printf("Enter number of memory frames: ");
+    scanf("%d", &n);
+
+    printf("Enter the length of the reference string: ");
+    scanf("%d", &refLen);
+
+    printf("Enter the reference string (space-separated):\n");
+    for(i = 0; i < refLen; i++) {
+        scanf("%d", &referenceString[i]);
+    }
+
+    for(i = 0; i < n; i++) {
+        frames[i] = -1;
+    }
+
+    printf("\nPage Replacement Process (FIFO):\n");
+
+    for(i = 0; i < refLen; i++) {
+        found = 0;
+
+        for(j = 0; j < n; j++) {
+            if(frames[j] == referenceString[i]) {
+                found = 1;
+                break;
+            }
+        }
+
+        if(!found) {
+            frames[pos] = referenceString[i];
+            pos = (pos + 1) % n;
+            pageFaults++;
+            printf("Step %2d: ", i + 1);
+            for(k = 0; k < n; k++) {
+                if(frames[k] != -1)
+                    printf("%d ", frames[k]);
+                else
+                    printf("- ");
+            }
+            printf(" <- Page Fault\n");
+        } else {
+            printf("Step %2d: ", i + 1);
+            for(k = 0; k < n; k++) {
+                if(frames[k] != -1)
+                    printf("%d ", frames[k]);
+                else
+                    printf("- ");
+            }
+            printf(" <- No Page Fault\n");
+        }
+    }
+
+    printf("\nTotal Page Faults = %d\n", pageFaults);
+    return 0;
+}
+
+
+
+     or
+
+
+Write the simulation program using SJF(non-preemptive). The arrival time and first CPU bursts of 
+different jobs should be input to the system. The Assume the fixed I/O waiting time (2 units).The next 
+CPU burst should be generated using random function. The output should give the Gantt chart,    
+Turnaround    Time    and    Waiting    time    for    each    process     and     average times.
+
+
+ans
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+typedef struct {
+    char name[20];
+    int at;
+    int bt;
+    int ct;
+    int wt;
+    int tat;
+    int tbt;
+} Process;
+
+Process *p;
+int n;
+int currentTime = 0;
+int completed = 0;
+float totalWT = 0, totalTAT = 0;
+const int IO_WAIT = 2;
+
+void accept() {
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    p = (Process*)malloc(sizeof(Process) * n);
+    for (int i = 0; i < n; i++) {
+        sprintf(p[i].name, "P%d", i + 1);
+        printf("\nEnter arrival time for %s: ", p[i].name);
+        scanf("%d", &p[i].at);
+        printf("Enter CPU burst time for %s: ", p[i].name);
+        scanf("%d", &p[i].bt);
+        p[i].tbt = p[i].bt;
+        p[i].wt = 0;
+        p[i].tat = 0;
+    }
+}
+
+void sortByArrival() {
+    Process temp;
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (p[i].at > p[j].at) {
+                temp = p[i];
+                p[i] = p[j];
+                p[j] = temp;
+            }
+        }
+    }
+}
+
+int getNextProcess() {
+    int idx = -1, minBT = 9999;
+    for (int i = 0; i < n; i++) {
+        if (p[i].tbt > 0 && p[i].at <= currentTime) {
+            if (p[i].bt < minBT) {
+                minBT = p[i].bt;
+                idx = i;
+            }
+        }
+    }
+    return idx;
+}
+
+void schedule() {
+    srand(time(NULL));
+    sortByArrival();
+    currentTime = p[0].at;
+
+    int ganttStart[n], ganttEnd[n];
+    int idxOrder[n], orderCount = 0;
+
+    while (completed < n) {
+        int idx = getNextProcess();
+        if (idx == -1) {
+            currentTime++;
+        } else {
+            ganttStart[orderCount] = currentTime;
+            currentTime += p[idx].bt;
+            p[idx].ct = currentTime;
+            p[idx].wt = ganttStart[orderCount] - p[idx].at;
+            p[idx].tat = p[idx].wt + p[idx].bt;
+            totalWT += p[idx].wt;
+            totalTAT += p[idx].tat;
+            ganttEnd[orderCount] = currentTime;
+            idxOrder[orderCount] = idx;
+            orderCount++;
+            currentTime += IO_WAIT;
+            p[idx].tbt = 0;
+            completed++;
+        }
+    }
+
+    printf("\nGANTT CHART:\n");
+    printf("|");
+    for (int i = 0; i < orderCount; i++)
+        printf(" %s |", p[idxOrder[i]].name);
+    printf("\n");
+    for (int i = 0; i < orderCount; i++)
+        printf("%-6d", ganttStart[i]);
+    printf("%-6d\n", ganttEnd[orderCount - 1]);
+}
+
+void display() {
+    printf("\nPROCESS DETAILS:\n");
+    printf("Name\tAT\tBT\tWT\tTAT\tCT\n");
+    for (int i = 0; i < n; i++) {
+        printf("%s\t%d\t%d\t%d\t%d\t%d\n", p[i].name, p[i].at, p[i].bt, p[i].wt, p[i].tat, p[i].ct);
+    }
+    printf("\nTotal Waiting Time: %.2f", totalWT);
+    printf("\nTotal Turnaround Time: %.2f", totalTAT);
+    printf("\nAverage Waiting Time: %.2f", totalWT / n);
+    printf("\nAverage Turnaround Time: %.2f\n", totalTAT / n);
+}
+
+int main() {
+    accept();
+    schedule();
+    display();
+    return 0;
+}

@@ -1,0 +1,89 @@
+Q.1 Write a C program to accept the number of process and resources and find the need matrix 
+content and display it. 
+
+#include <stdio.h>
+
+int main() {
+    int process, resource, i, j;
+
+    printf("Enter number of Processes: ");
+    scanf("%d", &process);
+    printf("Enter number of Resources: ");
+    scanf("%d", &resource);
+
+    int max[10][10], alloc[10][10], need[10][10];
+
+    printf("\nEnter Max Matrix:\n");
+    for (i = 0; i < process; i++) {
+        for (j = 0; j < resource; j++) {
+            scanf("%d", &max[i][j]);
+        }
+    }
+
+    printf("\nEnter Allocation Matrix:\n");
+    for (i = 0; i < process; i++) {
+        for (j = 0; j < resource; j++) {
+            scanf("%d", &alloc[i][j]);
+        }
+    }
+
+    for (i = 0; i < process; i++) {
+        for (j = 0; j < resource; j++) {
+            need[i][j] = max[i][j] - alloc[i][j];
+        }
+    }
+
+    printf("\nNeed Matrix:\n");
+    for (i = 0; i < process; i++) {
+        for (j = 0; j < resource; j++) {
+            printf("%d\t", need[i][j]);
+        }
+        printf("\n");
+    }
+
+    return 0;
+}
+
+
+Q.2. Write the simulation program to implement demand paging and show the page scheduling 
+and total number of page faults for the following given page reference string. Give input n =3 as 
+the number of memory frames. 
+Reference String : 12,15,12,18,6,8,11,12,19,12,6,8,12,15,19,8 
+Implement OPT
+
+def optimal_page_replacement(reference_string, frame_count):
+    frames = []
+    page_faults = 0
+
+    print("Step\tFrames\t\tPage Fault")
+    for i, page in enumerate(reference_string):
+        if page in frames:
+            pf = "No"
+        else:
+            pf = "Yes"
+            page_faults += 1
+            if len(frames) < frame_count:
+                frames.append(page)
+            else:
+                farthest = -1
+                replace_index = -1
+                for j, f in enumerate(frames):
+                    if f not in reference_string[i+1:]:
+                        replace_index = j
+                        break
+                    else:
+                        next_use = reference_string[i+1:].index(f)
+                        if next_use > farthest:
+                            farthest = next_use
+                            replace_index = j
+                frames[replace_index] = page
+        print(f"{i+1}\t{frames}\t{pf}")
+
+    print(f"\nTotal Page Faults = {page_faults}")
+
+
+ref_string = [12, 15, 12, 18, 6, 8, 11, 12, 19, 12, 6, 8, 12, 15, 19, 8]
+frames_count = 3
+
+optimal_page_replacement(ref_string, frames_count)
+
