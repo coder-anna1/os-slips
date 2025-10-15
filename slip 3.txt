@@ -2,6 +2,36 @@ Q. 1 Creating a child process using the command exec(). Note down process ids of
 and the child processes, check whether the control is given back to the parent after the child 
 process terminates. 
 
+#include<stdio.h>
+#include<unistd.h>
+#include<sys/wait.h>
+#include<sys/types.h>
+int main()
+{
+    int pid;
+    pid=fork();
+    if(pid<0)
+    {
+        printf("Fork failed!");
+    }
+    else if(pid==0)  
+    {
+    printf("Child Process Id: %d, ParentProcess Id: %d\n",getpid(),getppid());
+    execl("/bin/ls", "ls", NULL);
+        printf("Exec failed\n");
+    }
+    else
+    {   
+        wait(NULL);
+        printf("Parent process Id: %d\n",getpid());
+        printf("Control returned to parent after child termination\n");
+    }
+    return 0;
+}
+
+
+extra
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
