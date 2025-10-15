@@ -174,7 +174,66 @@ CPU burst should be generated using random function. The output should give the 
 Turnaround Time and Waiting time for each process and average times. 
 
 
-ans
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef struct {
+char name[20];
+int at;
+int bt;
+int ct;
+int wt;
+int tat;
+int done;
+} Process;
+
+int main() {
+int n, i, currentTime = 0, completed = 0;
+scanf("%d", &n);
+Process p[n];
+for(i = 0; i < n; i++) {
+scanf("%s", p[i].name);
+scanf("%d", &p[i].at);
+scanf("%d", &p[i].bt);
+p[i].done = 0;
+}
+printf("\nGantt Chart:\n");
+while(completed < n) {
+int idx = -1, minBT = 1000000;
+for(i = 0; i < n; i++) {
+if(!p[i].done && p[i].at <= currentTime) {
+if(p[i].bt < minBT) {
+minBT = p[i].bt;
+idx = i;
+}
+}
+}
+if(idx == -1) {
+currentTime++;
+continue;
+}
+printf("|%s %d", p[idx].name, p[idx].bt);
+p[idx].wt = currentTime - p[idx].at;
+currentTime += p[idx].bt;
+p[idx].ct = currentTime;
+p[idx].tat = p[idx].ct - p[idx].at;
+p[idx].done = 1;
+completed++;
+}
+printf("|\n\n");
+printf("Process\tAT\tBT\tCT\tTAT\tWT\n");
+for(i = 0; i < n; i++) {
+printf("%s\t%d\t%d\t%d\t%d\t%d\n", p[i].name, p[i].at, p[i].bt, p[i].ct, p[i].tat, p[i].wt);
+}
+return 0;
+}
+
+
+extra
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -288,3 +347,4 @@ int main() {
     display();
     return 0;
 }
+
