@@ -95,3 +95,110 @@ int main() {
     calculateTimes(n, arrival, burst, process);
     return 0;
 }
+
+
+or
+
+Partially implement the Menu driven Banker's algorithm for accepting Allocation, Max from 
+user. 
+a) Accept Available 
+b) Display Allocation, Max 
+c) Find Need and display It, 
+d) Display Available Consider the system with 3 resources types A,B, and C with 7,2,6 
+instances respectively. 
+Consider the following snapshot: 
+ 
+ 
+Answer the following questions: 
+a) Display the contents of Available array? 
+b) Is there any deadlock? Print the message
+
+
+
+#include <stdio.h>
+#include <stdbool.h>
+
+#define P 5 // Number of processes
+#define R 3 // Number of resources
+
+void displayMatrix(int mat[P][R], char name[]) {
+    printf("%s Matrix:\n", name);
+    for(int i=0;i<P;i++){
+        for(int j=0;j<R;j++)
+            printf("%d ", mat[i][j]);
+        printf("\n");
+    }
+}
+
+void calculateNeed(int need[P][R], int max[P][R], int alloc[P][R]){
+    for(int i=0;i<P;i++)
+        for(int j=0;j<R;j++)
+            need[i][j] = max[i][j] - alloc[i][j];
+}
+
+bool isSafe(int alloc[P][R], int max[P][R], int avail[R]){
+    int need[P][R];
+    calculateNeed(need,max,alloc);
+    bool finish[P] = {false};
+    int work[R];
+    for(int i=0;i<R;i++) work[i] = avail[i];
+    int count = 0;
+
+    while(count < P){
+        bool found = false;
+        for(int p=0;p<P;p++){
+            if(!finish[p]){
+                int j;
+                for(j=0;j<R;j++)
+                    if(need[p][j] > work[j]) break;
+                if(j==R){
+                    for(int k=0;k<R;k++) work[k]+=alloc[p][k];
+                    finish[p] = true;
+                    count++;
+                    found = true;
+                }
+            }
+        }
+        if(!found) break;
+    }
+
+    return (count == P);
+}
+
+int main(){
+    int alloc[P][R], max[P][R];
+    int total[R] = {7,2,6};
+    int avail[R];
+
+    printf("Enter Allocation Matrix:\n");
+    for(int i=0;i<P;i++)
+        for(int j=0;j<R;j++)
+            scanf("%d",&alloc[i][j]);
+
+    printf("Enter Maximum Matrix:\n");
+    for(int i=0;i<P;i++)
+        for(int j=0;j<R;j++)
+            scanf("%d",&max[i][j]);
+
+    // Display matrices
+    displayMatrix(alloc,"Allocation");
+    displayMatrix(max,"Maximum");
+
+    // Calculate Available
+    for(int j=0;j<R;j++){
+        int sum = 0;
+        for(int i=0;i<P;i++) sum += alloc[i][j];
+        avail[j] = total[j] - sum;
+    }
+
+    printf("\nAvailable Array: ");
+    for(int j=0;j<R;j++) printf("%d ", avail[j]);
+    printf("\n");
+
+    if(isSafe(alloc,max,avail))
+        printf("System is in SAFE state. No deadlock.\n");
+    else
+        printf("System is NOT in safe state. Deadlock possible!\n");
+
+    return 0;
+}
