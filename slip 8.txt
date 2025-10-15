@@ -45,45 +45,100 @@ int main() {
 }
 
 
-Q.2. Write the simulation program to implement demand paging and show the page scheduling 
-and total number of page faults for the following given page reference string. Give input n =3 as 
-the number of memory frames. 
+Q.2 Write the simulation program to implement demand paging and show the page 
+scheduling and total number of page faults for the following given page reference string. 
+Give input n as the number of memory frames. 
 Reference String : 12,15,12,18,6,8,11,12,19,12,6,8,12,15,19,8 
 Implement OPT
 
-def optimal_page_replacement(reference_string, frame_count):
-    frames = []
-    page_faults = 0
 
-    print("Step\tFrames\t\tPage Fault")
-    for i, page in enumerate(reference_string):
-        if page in frames:
-            pf = "No"
-        else:
-            pf = "Yes"
-            page_faults += 1
-            if len(frames) < frame_count:
-                frames.append(page)
-            else:
-                farthest = -1
-                replace_index = -1
-                for j, f in enumerate(frames):
-                    if f not in reference_string[i+1:]:
-                        replace_index = j
-                        break
-                    else:
-                        next_use = reference_string[i+1:].index(f)
-                        if next_use > farthest:
-                            farthest = next_use
-                            replace_index = j
-                frames[replace_index] = page
-        print(f"{i+1}\t{frames}\t{pf}")
+ans
+#include <stdio.h>
+#define MAX 100
 
-    print(f"\nTotal Page Faults = {page_faults}")
+int predict(int referenceString[], int frames[], int refLen, int index, int n) {
+    int i, j, farthest = index, pos = -1, found;
+    for(i = 0; i < n; i++) {
+        found = 0;
+        for(j = index; j < refLen; j++) {
+            if(frames[i] == referenceString[j]) {
+                if(j > farthest) {
+                    farthest = j;
+                    pos = i;
+                }
+                found = 1;
+                break;
+            }
+        }
+        if(!found)
+            return i;
+    }
+    return (pos == -1) ? 0 : pos;
+}
 
+int main() {
+    int referenceString[MAX], frames[MAX];
+    int refLen, n;
+    int i, j, k, pageFaults = 0, found;
 
-ref_string = [12, 15, 12, 18, 6, 8, 11, 12, 19, 12, 6, 8, 12, 15, 19, 8]
-frames_count = 3
+    printf("Enter the number of memory frames: ");
+    scanf("%d", &n);
 
-optimal_page_replacement(ref_string, frames_count)
+    printf("Enter the length of the reference string: ");
+    scanf("%d", &refLen);
+
+    printf("Enter the reference string (space-separated):\n");
+    for(i = 0; i < refLen; i++) {
+        scanf("%d", &referenceString[i]);
+    }
+
+    for(i = 0; i < n; i++) {
+        frames[i] = -1;
+    }
+
+    printf("\nPage Replacement Process (OPT):\n");
+
+    for(i = 0; i < refLen; i++) {
+        found = 0;
+
+        for(j = 0; j < n; j++) {
+            if(frames[j] == referenceString[i]) {
+                found = 1;
+                break;
+            }
+        }
+
+        if(!found) {
+            int pos = -1;
+
+            for(j = 0; j < n; j++) {
+                if(frames[j] == -1) {
+                    pos = j;
+                    break;
+                }
+            }
+
+            if(pos == -1)
+                pos = predict(referenceString, frames, refLen, i + 1, n);
+
+            frames[pos] = referenceString[i];
+            pageFaults++;
+        }
+
+        printf("Step %2d: ", i + 1);
+        for(k = 0; k < n; k++) {
+            if(frames[k] != -1)
+                printf("%d ", frames[k]);
+            else
+                printf("- ");
+        }
+        if(found)
+            printf(" <- No Page Fault\n");
+        else
+            printf(" <- Page Fault\n");
+    }
+
+    printf("\nTotal Page Faults = %d\n", pageFaults);
+    return 0;
+}
 
